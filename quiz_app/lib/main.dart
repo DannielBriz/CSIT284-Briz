@@ -16,19 +16,20 @@ void main() {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  Image.asset('assets/logo-image/logo.png', width: 200),
                   Text(
                     'Learn Flutter the fun way!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 20),
                   ),
+
                   SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      print('Quiz started!');
-                    },
-                    child: Text('Start Quiz'),
+
+                  TextButton(
+                    onPressed: () {},
+                    child: Text(
+                      'Start Quiz',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
                   ),
                 ],
               ),
