@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 void main() {
+  
   runApp(
     MaterialApp(
       home: Scaffold(
@@ -32,6 +33,7 @@ void main() {
                     ),
                   ),
                 ],
+  
               ),
             ),
           ),
@@ -39,4 +41,12 @@ void main() {
       ),
     ),
   );
+}
+
+
+
+
+
+SafeArea Question{
+  printf("Try ")
 }

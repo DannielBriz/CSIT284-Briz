@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/dice_roller.dart';
 
 void main() {
   runApp(
@@ -17,20 +16,19 @@ void main() {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.asset('assets/logo-image/logo.png', width: 200),
                   Text(
                     'Learn Flutter the fun way!',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  ),
-
-                  SizedBox(height: 20),
-
-                  TextButton(
-                    onPressed: () {},
-                    child: Text(
-                      'Start Quiz',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
                     ),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      print('Quiz started!');
+                    },
+                    child: Text('Start Quiz'),
                   ),
                 ],
               ),
