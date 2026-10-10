@@ -165,23 +165,30 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _deleteExpense(int index) {
-    final deletedName = expenses[index]['description'] as String;
+    final deletedExpense = Map<String, dynamic>.from(expenses[index]);
 
     setState(() {
       expenses.removeAt(index);
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$deletedName deleted.'),
-        action: SnackBarAction(
-          label: 'UNDO',
-          onPressed: () {
-            // Undo is implemented in the next milestone.
-          },
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('${deletedExpense['description']} deleted.'),
+          action: SnackBarAction(
+            label: 'UNDO',
+            onPressed: () {
+              setState(() {
+                expenses.insert(
+                  index.clamp(0, expenses.length),
+                  deletedExpense,
+                );
+              });
+            },
+          ),
         ),
-      ),
-    );
+      );
   }
 
   @override
