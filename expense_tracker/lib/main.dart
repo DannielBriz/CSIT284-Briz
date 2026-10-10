@@ -31,9 +31,7 @@ class MyApp extends StatelessWidget {
       title: 'Expense Tracker',
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         scaffoldBackgroundColor: const Color(0xFFF5F8F5),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
@@ -99,8 +97,7 @@ class _HomePageState extends State<HomePage> {
   double get totalExpenses {
     return expenses.fold<double>(
       0,
-      (total, expense) =>
-          total + (expense['amount'] as num).toDouble(),
+      (total, expense) => total + (expense['amount'] as num).toDouble(),
     );
   }
 
@@ -109,8 +106,7 @@ class _HomePageState extends State<HomePage> {
         .where((expense) => expense['category'] == category)
         .fold<double>(
           0,
-          (total, expense) =>
-              total + (expense['amount'] as num).toDouble(),
+          (total, expense) => total + (expense['amount'] as num).toDouble(),
         );
   }
 
@@ -129,9 +125,7 @@ class _HomePageState extends State<HomePage> {
         final decoded = jsonDecode(savedExpenses) as List;
 
         expenses.addAll(
-          decoded.map(
-            (item) => Map<String, dynamic>.from(item as Map),
-          ),
+          decoded.map((item) => Map<String, dynamic>.from(item as Map)),
         );
       }
     } catch (error) {
@@ -180,9 +174,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> showExpenseDialog({
-    Map<String, dynamic>? expense,
-  }) async {
+  Future<void> showExpenseDialog({Map<String, dynamic>? expense}) async {
     final isEditing = expense != null;
     final formKey = GlobalKey<FormState>();
 
@@ -191,9 +183,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     final amountController = TextEditingController(
-      text: expense == null
-          ? ''
-          : (expense['amount'] as num).toString(),
+      text: expense == null ? '' : (expense['amount'] as num).toString(),
     );
 
     String selectedCategory =
@@ -206,9 +196,7 @@ class _HomePageState extends State<HomePage> {
           return StatefulBuilder(
             builder: (context, setDialogState) {
               return AlertDialog(
-                title: Text(
-                  isEditing ? 'Edit Expense' : 'Add Expense',
-                ),
+                title: Text(isEditing ? 'Edit Expense' : 'Add Expense'),
                 content: Form(
                   key: formKey,
                   child: SingleChildScrollView(
@@ -224,8 +212,7 @@ class _HomePageState extends State<HomePage> {
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Please enter a description';
                             }
                             return null;
@@ -234,8 +221,7 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: amountController,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
+                          keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
                           decoration: const InputDecoration(
@@ -244,9 +230,7 @@ class _HomePageState extends State<HomePage> {
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            final amount = double.tryParse(
-                              value?.trim() ?? '',
-                            );
+                            final amount = double.tryParse(value?.trim() ?? '');
 
                             if (amount == null || amount <= 0) {
                               return 'Enter an amount greater than zero';
@@ -294,11 +278,8 @@ class _HomePageState extends State<HomePage> {
                         return;
                       }
 
-                      final description =
-                          descriptionController.text.trim();
-                      final amount = double.parse(
-                        amountController.text.trim(),
-                      );
+                      final description = descriptionController.text.trim();
+                      final amount = double.parse(amountController.text.trim());
 
                       if (isEditing) {
                         setState(() {
@@ -345,14 +326,14 @@ class _HomePageState extends State<HomePage> {
         },
       );
     } finally {
-      descriptionController.dispose();
-      amountController.dispose();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        descriptionController.dispose();
+        amountController.dispose();
+      });
     }
   }
 
-  Future<void> deleteExpense(
-    Map<String, dynamic> expense,
-  ) async {
+  Future<void> deleteExpense(Map<String, dynamic> expense) async {
     final originalIndex = expenses.indexOf(expense);
 
     if (originalIndex == -1) {
@@ -411,17 +392,11 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Row(
               children: [
-                Icon(
-                  Icons.account_balance_wallet,
-                  color: Colors.white,
-                ),
+                Icon(Icons.account_balance_wallet, color: Colors.white),
                 SizedBox(width: 8),
                 Text(
                   'Total Expenses',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ],
             ),
@@ -437,9 +412,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 4),
             Text(
               '${expenses.length} ${expenses.length == 1 ? 'expense' : 'expenses'} recorded',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.85),
-              ),
+              style: TextStyle(color: Colors.white.withOpacity(0.85)),
             ),
           ],
         ),
@@ -457,10 +430,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Text(
               'Spending by Category',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             ...categories.map((category) {
@@ -484,9 +454,7 @@ class _HomePageState extends State<HomePage> {
                         Expanded(child: Text(category)),
                         Text(
                           '₱${amount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -530,20 +498,13 @@ class _HomePageState extends State<HomePage> {
           child: Center(
             child: Column(
               children: [
-                Icon(
-                  Icons.receipt_long,
-                  size: 44,
-                  color: Colors.grey.shade400,
-                ),
+                Icon(Icons.receipt_long, size: 44, color: Colors.grey.shade400),
                 const SizedBox(height: 12),
                 Text(
                   selectedFilter == 'All'
                       ? 'No expenses yet'
                       : 'No $selectedFilter expenses found',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -551,9 +512,7 @@ class _HomePageState extends State<HomePage> {
                       ? 'Tap Add Expense to get started.'
                       : 'Try another category or add an expense.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -576,8 +535,7 @@ class _HomePageState extends State<HomePage> {
               vertical: 6,
             ),
             leading: CircleAvatar(
-              backgroundColor:
-                  categoryColor(category).withOpacity(0.12),
+              backgroundColor: categoryColor(category).withOpacity(0.12),
               child: Icon(
                 categoryIcon(category),
                 color: categoryColor(category),
@@ -585,9 +543,7 @@ class _HomePageState extends State<HomePage> {
             ),
             title: Text(
               expense['description'] as String,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             subtitle: Text(category),
             trailing: Row(
@@ -624,10 +580,7 @@ class _HomePageState extends State<HomePage> {
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.delete_outline,
-                            color: Colors.red,
-                          ),
+                          Icon(Icons.delete_outline, color: Colors.red),
                           SizedBox(width: 8),
                           Text('Delete'),
                         ],
@@ -664,10 +617,7 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 24),
                   const Text(
                     'Recent Expenses',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
@@ -698,3 +648,35 @@ class _HomePageState extends State<HomePage> {
                     value: selectedSort,
                     decoration: const InputDecoration(
                       labelText: 'Sort Expenses',
+                      prefixIcon: Icon(Icons.sort),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    items: sortOptions.map((option) {
+                      return DropdownMenuItem<String>(
+                        value: option,
+                        child: Text(option),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedSort = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  buildExpenseList(),
+                ],
+              ),
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: isLoading ? null : () => showExpenseDialog(),
+        icon: const Icon(Icons.add),
+        label: const Text('Add Expense'),
+      ),
+    );
+  }
+}
