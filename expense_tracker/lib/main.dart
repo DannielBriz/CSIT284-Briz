@@ -15,6 +15,12 @@ const List<String> categories = [
   'Other',
 ];
 
+const List<String> sortOptions = [
+  'Newest first',
+  'Highest amount',
+  'Lowest amount',
+];
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -24,8 +30,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Expense Tracker',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         scaffoldBackgroundColor: const Color(0xFFF5F8F5),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
@@ -49,57 +55,43 @@ class _HomePageState extends State<HomePage> {
 
   bool isLoading = true;
   String selectedFilter = 'All';
-
-  @override
-  void initState() {
-    super.initState();
-    loadExpenses();
-  }
+  String selectedSort = 'Newest first';
 
   List<Map<String, dynamic>> get filteredExpenses {
     if (selectedFilter == 'All') {
       return expenses;
     }
 
-    return expenses.where((expense) {
-      return (expense['category'] as String? ?? 'Other') == selectedFilter;
-    }).toList();
+    return expenses
+        .where((expense) => expense['category'] == selectedFilter)
+        .toList();
   }
 
-  Future<void> loadExpenses() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedData = prefs.getString('expenses');
+  List<Map<String, dynamic>> get displayedExpenses {
+    final result = filteredExpenses.toList();
 
-      if (savedData != null) {
-        final List<dynamic> decoded = jsonDecode(savedData);
+    switch (selectedSort) {
+      case 'Highest amount':
+        result.sort(
+          (a, b) => (b['amount'] as num).compareTo(a['amount'] as num),
+        );
+        break;
 
-        if (!mounted) return;
+      case 'Lowest amount':
+        result.sort(
+          (a, b) => (a['amount'] as num).compareTo(b['amount'] as num),
+        );
+        break;
 
-        setState(() {
-          expenses.addAll(
-            decoded.map((item) => Map<String, dynamic>.from(item as Map)),
-          );
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading expenses: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      case 'Newest first':
+      default:
+        result.sort(
+          (a, b) => expenses.indexOf(b).compareTo(expenses.indexOf(a)),
+        );
+        break;
     }
-  }
 
-  Future<void> saveExpenses() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('expenses', jsonEncode(expenses));
-    } catch (e) {
-      debugPrint('Error saving expenses: $e');
-    }
+    return result;
   }
 
   double get totalExpenses {
@@ -110,12 +102,46 @@ class _HomePageState extends State<HomePage> {
   }
 
   double categoryTotal(String category) {
-    return expenses.fold<double>(0, (total, expense) {
-      if ((expense['category'] as String? ?? 'Other') == category) {
-        return total + (expense['amount'] as num).toDouble();
+    return expenses
+        .where((expense) => expense['category'] == category)
+        .fold<double>(
+          0,
+          (total, expense) => total + (expense['amount'] as num).toDouble(),
+        );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadExpenses();
+  }
+
+  Future<void> loadExpenses() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedExpenses = prefs.getString('expenses');
+
+      if (savedExpenses != null) {
+        final decoded = jsonDecode(savedExpenses) as List;
+
+        expenses.addAll(
+          decoded.map((item) => Map<String, dynamic>.from(item as Map)),
+        );
       }
-      return total;
-    });
+    } catch (error) {
+      debugPrint('Error loading expenses: $error');
+    }
+
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> saveExpenses() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('expenses', jsonEncode(expenses));
   }
 
   IconData categoryIcon(String category) {
@@ -144,16 +170,16 @@ class _HomePageState extends State<HomePage> {
       case 'Bills':
         return Colors.red;
       default:
-        return Colors.teal;
+        return Colors.green;
     }
   }
 
   Future<void> showAddExpenseDialog() async {
+    final formKey = GlobalKey<FormState>();
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
 
-    String selectedCategory = 'Food';
+    String selectedCategory = categories.first;
 
     try {
       await showDialog<void>(
@@ -163,22 +189,23 @@ class _HomePageState extends State<HomePage> {
             builder: (context, setDialogState) {
               return AlertDialog(
                 title: const Text('Add Expense'),
-                content: SingleChildScrollView(
-                  child: Form(
-                    key: formKey,
+                content: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextFormField(
                           controller: descriptionController,
                           decoration: const InputDecoration(
-                            labelText: 'Expense name',
+                            labelText: 'Description',
                             hintText: 'e.g. Lunch',
+                            prefixIcon: Icon(Icons.edit),
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Enter an expense name.';
+                              return 'Please enter a description';
                             }
                             return null;
                           },
@@ -191,17 +218,16 @@ class _HomePageState extends State<HomePage> {
                           ),
                           decoration: const InputDecoration(
                             labelText: 'Amount (₱)',
-                            hintText: 'e.g. 150.00',
+                            prefixIcon: Icon(Icons.payments),
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             final amount = double.tryParse(value?.trim() ?? '');
 
-                            if (amount == null ||
-                                !amount.isFinite ||
-                                amount <= 0) {
-                              return 'Enter a valid positive amount.';
+                            if (amount == null || amount <= 0) {
+                              return 'Enter an amount greater than zero';
                             }
+
                             return null;
                           },
                         ),
@@ -210,6 +236,7 @@ class _HomePageState extends State<HomePage> {
                           value: selectedCategory,
                           decoration: const InputDecoration(
                             labelText: 'Category',
+                            prefixIcon: Icon(Icons.category),
                             border: OutlineInputBorder(),
                           ),
                           items: categories.map((category) {
@@ -243,28 +270,31 @@ class _HomePageState extends State<HomePage> {
                         return;
                       }
 
-                      final description = descriptionController.text.trim();
-                      final amount = double.parse(amountController.text.trim());
+                      final newExpense = <String, dynamic>{
+                        'description': descriptionController.text.trim(),
+                        'amount': double.parse(amountController.text.trim()),
+                        'category': selectedCategory,
+                      };
 
                       setState(() {
-                        expenses.add({
-                          'description': description,
-                          'amount': amount,
-                          'category': selectedCategory,
-                        });
+                        expenses.add(newExpense);
                       });
-
-                      await saveExpenses();
-
-                      if (!mounted) return;
 
                       Navigator.pop(dialogContext);
 
-                      ScaffoldMessenger.of(this.context).showSnackBar(
-                        SnackBar(
-                          content: Text('Added $description successfully!'),
-                        ),
-                      );
+                      try {
+                        await saveExpenses();
+                      } catch (error) {
+                        debugPrint('Error saving expense: $error');
+                      }
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Expense added successfully!'),
+                          ),
+                        );
+                      }
                     },
                     child: const Text('Add'),
                   ),
@@ -280,43 +310,96 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<void> deleteExpense(int index) async {
-    final deletedExpense = Map<String, dynamic>.from(expenses[index]);
+  Future<void> deleteExpense(Map<String, dynamic> expense) async {
+    final originalIndex = expenses.indexOf(expense);
+
+    if (originalIndex == -1) {
+      return;
+    }
 
     setState(() {
-      expenses.removeAt(index);
+      expenses.removeAt(originalIndex);
     });
 
-    await saveExpenses();
+    try {
+      await saveExpenses();
+    } catch (error) {
+      debugPrint('Error saving deleted expense: $error');
+    }
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('${deletedExpense['description']} deleted.'),
+          content: Text('${expense['description']} deleted'),
           action: SnackBarAction(
             label: 'UNDO',
             onPressed: () async {
-              if (!mounted) return;
-
               setState(() {
-                expenses.insert(
-                  index.clamp(0, expenses.length),
-                  deletedExpense,
-                );
+                final insertIndex = originalIndex > expenses.length
+                    ? expenses.length
+                    : originalIndex;
+
+                expenses.insert(insertIndex, expense);
               });
 
-              await saveExpenses();
+              try {
+                await saveExpenses();
+              } catch (error) {
+                debugPrint('Error restoring expense: $error');
+              }
             },
           ),
         ),
       );
   }
 
+  Widget buildTotalCard() {
+    return Card(
+      elevation: 0,
+      color: Colors.green.shade700,
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.account_balance_wallet, color: Colors.white),
+                SizedBox(width: 8),
+                Text(
+                  'Total Expenses',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '₱${totalExpenses.toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${expenses.length} ${expenses.length == 1 ? 'expense' : 'expenses'} recorded',
+              style: TextStyle(color: Colors.white.withOpacity(0.85)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget buildCategorySummary() {
     return Card(
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -324,64 +407,50 @@ class _HomePageState extends State<HomePage> {
           children: [
             const Text(
               'Spending by Category',
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'See where your money goes.',
-              style: TextStyle(color: Colors.black54),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             ...categories.map((category) {
               final amount = categoryTotal(category);
               final percentage = totalExpenses == 0
                   ? 0.0
                   : amount / totalExpenses;
-              final color = categoryColor(category);
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 18),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Column(
                   children: [
                     Row(
                       children: [
-                        CircleAvatar(
-                          radius: 18,
-                          backgroundColor: color.withOpacity(0.12),
-                          child: Icon(
-                            categoryIcon(category),
-                            color: color,
-                            size: 19,
-                          ),
+                        Icon(
+                          categoryIcon(category),
+                          color: categoryColor(category),
+                          size: 20,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            category,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(category)),
                         Text(
                           '₱${amount.toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
                       value: percentage,
-                      minHeight: 7,
-                      color: color,
-                      backgroundColor: color.withOpacity(0.12),
+                      minHeight: 6,
+                      backgroundColor: Colors.grey.shade200,
+                      color: categoryColor(category),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 3),
                     Align(
                       alignment: Alignment.centerRight,
                       child: Text(
                         '${(percentage * 100).toStringAsFixed(1)}%',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.black54,
+                          color: Colors.grey.shade600,
                         ),
                       ),
                     ),
@@ -396,32 +465,34 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildExpenseList() {
-    final visibleExpenses = filteredExpenses;
+    final visibleExpenses = displayedExpenses;
 
     if (visibleExpenses.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 28),
-        child: Center(
-          child: Column(
-            children: [
-              const Icon(Icons.receipt_long, size: 50, color: Colors.grey),
-              const SizedBox(height: 10),
-              Text(
-                selectedFilter == 'All'
-                    ? 'No expenses yet'
-                    : 'No $selectedFilter expenses',
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
+      return Card(
+        elevation: 0,
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.receipt_long, size: 44, color: Colors.grey.shade400),
+                const SizedBox(height: 12),
+                Text(
+                  selectedFilter == 'All'
+                      ? 'No expenses yet'
+                      : 'No $selectedFilter expenses found',
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 16),
                 ),
-              ),
-              Text(
-                selectedFilter == 'All'
-                    ? 'Tap Add Expense to get started.'
-                    : 'Try another category or add an expense.',
-                textAlign: TextAlign.center,
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  selectedFilter == 'All'
+                      ? 'Tap Add Expense to get started.'
+                      : 'Try another category or add an expense.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -429,12 +500,17 @@ class _HomePageState extends State<HomePage> {
 
     return Column(
       children: visibleExpenses.map((expense) {
-        final category = expense['category'] as String? ?? 'Other';
+        final category = expense['category'] as String;
         final amount = (expense['amount'] as num).toDouble();
-        final originalIndex = expenses.indexOf(expense);
 
         return Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 10),
           child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 6,
+            ),
             leading: CircleAvatar(
               backgroundColor: categoryColor(category).withOpacity(0.12),
               child: Icon(
@@ -442,19 +518,40 @@ class _HomePageState extends State<HomePage> {
                 color: categoryColor(category),
               ),
             ),
-            title: Text(expense['description'] as String),
+            title: Text(
+              expense['description'] as String,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: Text(category),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   '₱${amount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
-                IconButton(
-                  tooltip: 'Delete expense',
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => deleteExpense(originalIndex),
+                PopupMenuButton<String>(
+                  tooltip: 'Expense options',
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      deleteExpense(expense);
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete'),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -476,101 +573,68 @@ class _HomePageState extends State<HomePage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-              child: SingleChildScrollView(
+              child: ListView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Your Overview',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                children: [
+                  buildTotalCard(),
+                  const SizedBox(height: 20),
+                  buildCategorySummary(),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Recent Expenses',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedFilter,
+                    decoration: const InputDecoration(
+                      labelText: 'Filter by Category',
+                      prefixIcon: Icon(Icons.filter_list),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
-                    const SizedBox(height: 12),
-                    Card(
-                      color: Colors.green.shade700,
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.account_balance_wallet,
-                              size: 42,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Total Expenses',
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '₱${totalExpenses.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 27,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${expenses.length} expense${expenses.length == 1 ? '' : 's'} recorded',
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    items: ['All', ...categories].map((category) {
+                      return DropdownMenuItem<String>(
+                        value: category,
+                        child: Text(category),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedFilter = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedSort,
+                    decoration: const InputDecoration(
+                      labelText: 'Sort Expenses',
+                      prefixIcon: Icon(Icons.sort),
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
                     ),
-                    const SizedBox(height: 20),
-                    buildCategorySummary(),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Recent Expenses',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      value: selectedFilter,
-                      decoration: const InputDecoration(
-                        labelText: 'Filter by category',
-                        prefixIcon: Icon(Icons.filter_list),
-                        border: OutlineInputBorder(),
-                      ),
-                      items: ['All', ...categories].map((category) {
-                        return DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            selectedFilter = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    buildExpenseList(),
-                    const SizedBox(height: 80),
-                  ],
-                ),
+                    items: sortOptions.map((option) {
+                      return DropdownMenuItem<String>(
+                        value: option,
+                        child: Text(option),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          selectedSort = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  buildExpenseList(),
+                ],
               ),
             ),
       floatingActionButton: FloatingActionButton.extended(
