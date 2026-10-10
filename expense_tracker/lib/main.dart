@@ -45,72 +45,119 @@ class _HomePageState extends State<HomePage> {
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
 
+    String selectedCategory = 'Food';
+
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Add Expense'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Expense name',
-                  hintText: 'e.g. Food, Transportation',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: amountController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Amount (₱)',
-                  hintText: 'e.g. 150.00',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final description = descriptionController.text.trim();
-                final amount = double.tryParse(amountController.text.trim());
-
-                if (description.isEmpty || amount == null || amount <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Enter an expense name and a valid amount.',
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Add Expense'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: descriptionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Expense name',
+                        hintText: 'e.g. Lunch',
+                        border: OutlineInputBorder(),
                       ),
                     ),
-                  );
-                  return;
-                }
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Amount (₱)',
+                        hintText: 'e.g. 150.00',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedCategory,
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'Food', child: Text('Food')),
+                        DropdownMenuItem(
+                          value: 'Transportation',
+                          child: Text('Transportation'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'School',
+                          child: Text('School'),
+                        ),
+                        DropdownMenuItem(value: 'Bills', child: Text('Bills')),
+                        DropdownMenuItem(value: 'Other', child: Text('Other')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          setDialogState(() {
+                            selectedCategory = value;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final description = descriptionController.text.trim();
+                    final amount = double.tryParse(
+                      amountController.text.trim(),
+                    );
 
-                setState(() {
-                  expenses.add({'description': description, 'amount': amount});
-                });
+                    if (description.isEmpty ||
+                        amount == null ||
+                        !amount.isFinite ||
+                        amount <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Enter a name and a valid positive amount.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
 
-                Navigator.pop(dialogContext);
+                    setState(() {
+                      expenses.add({
+                        'description': description,
+                        'amount': amount,
+                        'category': selectedCategory,
+                      });
+                    });
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Added $description successfully!')),
-                );
-              },
-              child: const Text('Add'),
-            ),
-          ],
+                    Navigator.pop(dialogContext);
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Added $description successfully!'),
+                      ),
+                    );
+                  },
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
         );
       },
     ).then((_) {
@@ -133,8 +180,6 @@ class _HomePageState extends State<HomePage> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-
-            // Total expense card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -159,16 +204,12 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
-
             const Text(
               'Recent Expenses',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-
-            // Expense list or empty message
             Expanded(
               child: expenses.isEmpty
                   ? const Center(
@@ -203,6 +244,7 @@ class _HomePageState extends State<HomePage> {
                               child: Icon(Icons.receipt_long),
                             ),
                             title: Text(expense['description'] as String),
+                            subtitle: Text(expense['category'] as String),
                             trailing: Text(
                               '₱${(expense['amount'] as double).toStringAsFixed(2)}',
                               style: const TextStyle(
@@ -218,8 +260,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-
-      // Add expense button
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddExpenseDialog,
         tooltip: 'Add Expense',
