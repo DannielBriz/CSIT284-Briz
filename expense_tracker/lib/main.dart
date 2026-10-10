@@ -46,12 +46,24 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final List<Map<String, dynamic>> expenses = [];
+
   bool isLoading = true;
+  String selectedFilter = 'All';
 
   @override
   void initState() {
     super.initState();
     loadExpenses();
+  }
+
+  List<Map<String, dynamic>> get filteredExpenses {
+    if (selectedFilter == 'All') {
+      return expenses;
+    }
+
+    return expenses.where((expense) {
+      return (expense['category'] as String? ?? 'Other') == selectedFilter;
+    }).toList();
   }
 
   Future<void> loadExpenses() async {
@@ -384,28 +396,42 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildExpenseList() {
-    if (expenses.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 28),
-        child: Column(
-          children: [
-            Icon(Icons.receipt_long, size: 50, color: Colors.grey),
-            SizedBox(height: 10),
-            Text(
-              'No expenses yet',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-            ),
-            Text('Tap Add Expense to get started.'),
-          ],
+    final visibleExpenses = filteredExpenses;
+
+    if (visibleExpenses.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 28),
+        child: Center(
+          child: Column(
+            children: [
+              const Icon(Icons.receipt_long, size: 50, color: Colors.grey),
+              const SizedBox(height: 10),
+              Text(
+                selectedFilter == 'All'
+                    ? 'No expenses yet'
+                    : 'No $selectedFilter expenses',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                selectedFilter == 'All'
+                    ? 'Tap Add Expense to get started.'
+                    : 'Try another category or add an expense.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
 
     return Column(
-      children: List.generate(expenses.length, (index) {
-        final expense = expenses[index];
+      children: visibleExpenses.map((expense) {
         final category = expense['category'] as String? ?? 'Other';
         final amount = (expense['amount'] as num).toDouble();
+        final originalIndex = expenses.indexOf(expense);
 
         return Card(
           child: ListTile(
@@ -428,13 +454,13 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   tooltip: 'Delete expense',
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => deleteExpense(index),
+                  onPressed: () => deleteExpense(originalIndex),
                 ),
               ],
             ),
           ),
         );
-      }),
+      }).toList(),
     );
   }
 
@@ -519,6 +545,28 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: selectedFilter,
+                      decoration: const InputDecoration(
+                        labelText: 'Filter by category',
+                        prefixIcon: Icon(Icons.filter_list),
+                        border: OutlineInputBorder(),
+                      ),
+                      items: ['All', ...categories].map((category) {
+                        return DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            selectedFilter = value;
+                          });
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
                     buildExpenseList(),
                     const SizedBox(height: 80),
                   ],
