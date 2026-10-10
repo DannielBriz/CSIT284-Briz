@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const ExpenseTrackerApp());
@@ -31,145 +34,212 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final List<Map<String, dynamic>> expenses = [];
 
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExpenses();
+  }
+
+  // Load previously saved expenses.
+  Future<void> _loadExpenses() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedData = prefs.getString('expenses');
+
+      if (savedData != null) {
+        final List<dynamic> decodedData = jsonDecode(savedData);
+
+        final loadedExpenses = decodedData.map((item) {
+          return Map<String, dynamic>.from(item as Map);
+        }).toList();
+
+        if (!mounted) return;
+
+        setState(() {
+          expenses.addAll(loadedExpenses);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading expenses: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Save expenses to local storage.
+  Future<void> _saveExpenses() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('expenses', jsonEncode(expenses));
+    } catch (e) {
+      debugPrint('Error saving expenses: $e');
+    }
+  }
+
   double get totalExpenses {
     double total = 0;
 
     for (final expense in expenses) {
-      total += expense['amount'] as double;
+      total += (expense['amount'] as num).toDouble();
     }
 
     return total;
   }
 
-  void _showAddExpenseDialog() {
+  Future<void> _showAddExpenseDialog() async {
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
 
     String selectedCategory = 'Food';
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Add Expense'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Expense name',
-                        hintText: 'e.g. Lunch',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Amount (₱)',
-                        hintText: 'e.g. 150.00',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedCategory,
-                      decoration: const InputDecoration(
-                        labelText: 'Category',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 'Food', child: Text('Food')),
-                        DropdownMenuItem(
-                          value: 'Transportation',
-                          child: Text('Transportation'),
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              return AlertDialog(
+                title: const Text('Add Expense'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Expense name',
+                          hintText: 'e.g. Lunch',
+                          border: OutlineInputBorder(),
                         ),
-                        DropdownMenuItem(
-                          value: 'School',
-                          child: Text('School'),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: amountController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
                         ),
-                        DropdownMenuItem(value: 'Bills', child: Text('Bills')),
-                        DropdownMenuItem(value: 'Other', child: Text('Other')),
-                      ],
-                      onChanged: (value) {
-                        if (value != null) {
-                          setDialogState(() {
-                            selectedCategory = value;
-                          });
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    final description = descriptionController.text.trim();
-                    final amount = double.tryParse(
-                      amountController.text.trim(),
-                    );
-
-                    if (description.isEmpty ||
-                        amount == null ||
-                        !amount.isFinite ||
-                        amount <= 0) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Enter a name and a valid positive amount.',
+                        decoration: const InputDecoration(
+                          labelText: 'Amount (₱)',
+                          hintText: 'e.g. 150.00',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: selectedCategory,
+                        decoration: const InputDecoration(
+                          labelText: 'Category',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'Food', child: Text('Food')),
+                          DropdownMenuItem(
+                            value: 'Transportation',
+                            child: Text('Transportation'),
                           ),
+                          DropdownMenuItem(
+                            value: 'School',
+                            child: Text('School'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Bills',
+                            child: Text('Bills'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Other',
+                            child: Text('Other'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setDialogState(() {
+                              selectedCategory = value;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(dialogContext);
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      final description = descriptionController.text.trim();
+
+                      final amount = double.tryParse(
+                        amountController.text.trim(),
+                      );
+
+                      if (description.isEmpty ||
+                          amount == null ||
+                          !amount.isFinite ||
+                          amount <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Enter a name and a valid positive amount.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      setState(() {
+                        expenses.add({
+                          'description': description,
+                          'amount': amount,
+                          'category': selectedCategory,
+                        });
+                      });
+
+                      await _saveExpenses();
+
+                      if (!context.mounted) return;
+
+                      Navigator.pop(dialogContext);
+
+                      ScaffoldMessenger.of(this.context).showSnackBar(
+                        SnackBar(
+                          content: Text('Added $description successfully!'),
                         ),
                       );
-                      return;
-                    }
-
-                    setState(() {
-                      expenses.add({
-                        'description': description,
-                        'amount': amount,
-                        'category': selectedCategory,
-                      });
-                    });
-
-                    Navigator.pop(dialogContext);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Added $description successfully!'),
-                      ),
-                    );
-                  },
-                  child: const Text('Add'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    ).then((_) {
+                    },
+                    child: const Text('Add'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+    } finally {
       descriptionController.dispose();
       amountController.dispose();
-    });
+    }
   }
 
-  void _deleteExpense(int index) {
+  Future<void> _deleteExpense(int index) async {
     final deletedExpense = Map<String, dynamic>.from(expenses[index]);
 
     setState(() {
       expenses.removeAt(index);
     });
+
+    await _saveExpenses();
+
+    if (!mounted) return;
 
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -178,13 +248,15 @@ class _HomePageState extends State<HomePage> {
           content: Text('${deletedExpense['description']} deleted.'),
           action: SnackBarAction(
             label: 'UNDO',
-            onPressed: () {
+            onPressed: () async {
               setState(() {
                 expenses.insert(
                   index.clamp(0, expenses.length),
                   deletedExpense,
                 );
               });
+
+              await _saveExpenses();
             },
           ),
         ),
@@ -236,7 +308,9 @@ class _HomePageState extends State<HomePage> {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: expenses.isEmpty
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : expenses.isEmpty
                   ? const Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -274,7 +348,7 @@ class _HomePageState extends State<HomePage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  '₱${(expense['amount'] as double).toStringAsFixed(2)}',
+                                  '₱${(expense['amount'] as num).toDouble().toStringAsFixed(2)}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -285,7 +359,9 @@ class _HomePageState extends State<HomePage> {
                                     Icons.delete_outline,
                                     color: Colors.red,
                                   ),
-                                  onPressed: () => _deleteExpense(index),
+                                  onPressed: () {
+                                    _deleteExpense(index);
+                                  },
                                 ),
                               ],
                             ),
@@ -298,7 +374,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddExpenseDialog,
+        onPressed: _isLoading ? null : _showAddExpenseDialog,
         tooltip: 'Add Expense',
         child: const Icon(Icons.add),
       ),
