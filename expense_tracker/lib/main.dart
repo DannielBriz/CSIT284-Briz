@@ -21,10 +21,27 @@ class ExpenseTrackerApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  void _showAddExpenseDialog(BuildContext context) {
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final List<Map<String, dynamic>> expenses = [];
+
+  double get totalExpenses {
+    double total = 0;
+
+    for (final expense in expenses) {
+      total += expense['amount'] as double;
+    }
+
+    return total;
+  }
+
+  void _showAddExpenseDialog() {
     final descriptionController = TextEditingController();
     final amountController = TextEditingController();
 
@@ -81,15 +98,14 @@ class HomePage extends StatelessWidget {
                   return;
                 }
 
+                setState(() {
+                  expenses.add({'description': description, 'amount': amount});
+                });
+
                 Navigator.pop(dialogContext);
 
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Expense "$description" entered: '
-                      '₱${amount.toStringAsFixed(2)}',
-                    ),
-                  ),
+                  SnackBar(content: Text('Added $description successfully!')),
                 );
               },
               child: const Text('Add'),
@@ -106,7 +122,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Expense Tracker')),
+      appBar: AppBar(title: const Text('Expense Tracker'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -114,45 +130,99 @@ class HomePage extends StatelessWidget {
           children: [
             const Text(
               'Total Expenses',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
+
+            // Total expense card
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
                   children: [
-                    const Icon(Icons.account_balance_wallet, size: 40),
+                    const Icon(
+                      Icons.account_balance_wallet,
+                      size: 40,
+                      color: Colors.green,
+                    ),
                     const SizedBox(width: 16),
-                    const Text(
-                      '₱0.00',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Text(
+                        '₱${totalExpenses.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
+
             const SizedBox(height: 24),
+
             const Text(
               'Recent Expenses',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Card(
-              child: ListTile(
-                leading: Icon(Icons.receipt_long),
-                title: Text('No expenses yet'),
-                subtitle: Text('Add your first expense'),
-              ),
+
+            // Expense list or empty message
+            Expanded(
+              child: expenses.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.receipt_long,
+                            size: 60,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'No expenses yet',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text('Tap + to add your first expense.'),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: expenses.length,
+                      itemBuilder: (context, index) {
+                        final expense = expenses[index];
+
+                        return Card(
+                          child: ListTile(
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.receipt_long),
+                            ),
+                            title: Text(expense['description'] as String),
+                            trailing: Text(
+                              '₱${(expense['amount'] as double).toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
       ),
+
+      // Add expense button
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddExpenseDialog(context),
+        onPressed: _showAddExpenseDialog,
+        tooltip: 'Add Expense',
         child: const Icon(Icons.add),
       ),
     );
