@@ -111,9 +111,7 @@ class _HomePageState extends State<HomePage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
+                  onPressed: () => Navigator.pop(dialogContext),
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
@@ -164,6 +162,26 @@ class _HomePageState extends State<HomePage> {
       descriptionController.dispose();
       amountController.dispose();
     });
+  }
+
+  void _deleteExpense(int index) {
+    final deletedName = expenses[index]['description'] as String;
+
+    setState(() {
+      expenses.removeAt(index);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$deletedName deleted.'),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () {
+            // Undo is implemented in the next milestone.
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -245,12 +263,24 @@ class _HomePageState extends State<HomePage> {
                             ),
                             title: Text(expense['description'] as String),
                             subtitle: Text(expense['category'] as String),
-                            trailing: Text(
-                              '₱${(expense['amount'] as double).toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '₱${(expense['amount'] as double).toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'Delete expense',
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => _deleteExpense(index),
+                                ),
+                              ],
                             ),
                           ),
                         );
