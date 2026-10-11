@@ -30,7 +30,7 @@ void main() {
       theme: ThemeData().copyWith(
         useMaterial3: true,
         colorScheme: kColorScheme,
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme().copyWith(
           backgroundColor: kColorScheme.onPrimaryContainer,
           foregroundColor: kColorScheme.primaryContainer,
         ),
