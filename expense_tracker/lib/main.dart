@@ -11,18 +11,25 @@ final kDarkColorScheme = ColorScheme.fromSeed(
 );
 
 void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Expense Tracker',
-
-      theme: ThemeData.from(colorScheme: kColorScheme).copyWith(
+  runApp(
+    MaterialApp(
+      darkTheme: ThemeData.dark().copyWith(
+        useMaterial3: true,
+        colorScheme: kDarkColorScheme,
+        cardTheme: CardThemeData(
+          color: kDarkColorScheme.secondaryContainer,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kDarkColorScheme.primaryContainer,
+            foregroundColor: kDarkColorScheme.onPrimaryContainer,
+          ),
+        ),
+      ),
+      theme: ThemeData().copyWith(
+        useMaterial3: true,
+        colorScheme: kColorScheme,
         appBarTheme: AppBarTheme(
           backgroundColor: kColorScheme.onPrimaryContainer,
           foregroundColor: kColorScheme.primaryContainer,
@@ -37,7 +44,7 @@ class MyApp extends StatelessWidget {
             foregroundColor: kColorScheme.onPrimaryContainer,
           ),
         ),
-        textTheme: ThemeData.from(colorScheme: kColorScheme).textTheme.copyWith(
+        textTheme: ThemeData().textTheme.copyWith(
           titleLarge: TextStyle(
             fontWeight: FontWeight.bold,
             color: kColorScheme.onSecondaryContainer,
@@ -45,22 +52,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-
-      darkTheme: ThemeData.from(colorScheme: kDarkColorScheme).copyWith(
-        cardTheme: CardThemeData(
-          color: kDarkColorScheme.secondaryContainer,
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kDarkColorScheme.primaryContainer,
-            foregroundColor: kDarkColorScheme.onPrimaryContainer,
-          ),
-        ),
-      ),
-
-      themeMode: ThemeMode.system,
       home: const Expenses(),
-    );
-  }
+    ),
+  );
 }
