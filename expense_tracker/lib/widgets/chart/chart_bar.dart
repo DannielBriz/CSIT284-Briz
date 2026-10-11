@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ChartBar extends StatelessWidget {
-  const ChartBar({super.key, required this.fill, required this.label});
+  const ChartBar({super.key, required this.fill});
 
   final double fill;
-  final String label;
 
   @override
   Widget build(BuildContext context) {
