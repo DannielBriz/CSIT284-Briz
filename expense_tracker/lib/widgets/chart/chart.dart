@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-import 'package:expense_tracker/widgets/chart/chart_bar.dart';
 import 'package:expense_tracker/models/expense.dart';
 
 class Chart extends StatelessWidget {
@@ -17,75 +15,87 @@ class Chart extends StatelessWidget {
     ];
   }
 
-  double get maxTotalExpense {
-    double maxTotalExpense = 0;
+  double get maxTotal {
+    double maxValue = 0;
 
     for (final bucket in buckets) {
-      if (bucket.totalExpenses > maxTotalExpense) {
-        maxTotalExpense = bucket.totalExpenses;
+      if (bucket.totalExpenses > maxValue) {
+        maxValue = bucket.totalExpenses;
       }
     }
 
-    return maxTotalExpense;
+    return maxValue == 0 ? 1 : maxValue;
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode =
-        MediaQuery.of(context).platformBrightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      width: double.infinity,
       height: 180,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            Theme.of(context).colorScheme.primary.withOpacity(0.0),
-          ],
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-        ),
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                for (final bucket in buckets) // alternative to map()
-                  ChartBar(
-                    fill: bucket.totalExpenses == 0
-                        ? 0
-                        : bucket.totalExpenses / maxTotalExpense,
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children:
-                buckets // for ... in
-                    .map(
-                      (bucket) => Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Icon(
-                            categoryIcons[bucket.category],
-                            color: isDarkMode
-                                ? Theme.of(context).colorScheme.secondary
-                                : Theme.of(context).colorScheme.primary
-                                      .withOpacity(0.7),
-                          ),
-                        ),
+          for (final bucket in buckets)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      '\$${bucket.totalExpenses.toStringAsFixed(0)}',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 100 * bucket.totalExpenses / maxTotal,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary,
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                    )
-                    .toList(),
-          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      bucket.category.name.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelSmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
+  }
+}
+
+class ExpenseBucket {
+  const ExpenseBucket({required this.category, required this.expenses});
+
+  ExpenseBucket.forCategory(List<Expense> allExpenses, this.category)
+    : expenses = allExpenses
+          .where((expense) => expense.category == category)
+          .toList();
+
+  final Category category;
+  final List<Expense> expenses;
+
+  double get totalExpenses {
+    double sum = 0;
+
+    for (final expense in expenses) {
+      sum += expense.amount;
+    }
+
+    return sum;
   }
 }
