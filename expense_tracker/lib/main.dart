@@ -21,6 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Expense Tracker',
+
       theme: ThemeData.from(colorScheme: kColorScheme).copyWith(
         appBarTheme: AppBarTheme(
           backgroundColor: kColorScheme.onPrimaryContainer,
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+
       darkTheme: ThemeData.from(colorScheme: kDarkColorScheme).copyWith(
         cardTheme: CardThemeData(
           color: kDarkColorScheme.secondaryContainer,
@@ -56,6 +58,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
+
       themeMode: ThemeMode.system,
       home: const Expenses(),
     );
