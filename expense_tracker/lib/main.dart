@@ -21,50 +21,41 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Expense Tracker',
-      theme: ThemeData.from(colorScheme: kColorScheme, useMaterial3: true)
-          .copyWith(
-            appBarTheme: AppBarTheme(
-              backgroundColor: kColorScheme.onPrimaryContainer,
-              foregroundColor: kColorScheme.primaryContainer,
-            ),
-            cardTheme: CardThemeData(
-              color: kColorScheme.secondaryContainer,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kColorScheme.primaryContainer,
-                foregroundColor: kColorScheme.onPrimaryContainer,
-              ),
-            ),
-            textTheme:
-                ThemeData.from(
-                  colorScheme: kColorScheme,
-                  useMaterial3: true,
-                ).textTheme.copyWith(
-                  titleLarge: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: kColorScheme.onSecondaryContainer,
-                    fontSize: 16,
-                  ),
-                ),
+      theme: ThemeData.from(colorScheme: kColorScheme).copyWith(
+        appBarTheme: AppBarTheme(
+          backgroundColor: kColorScheme.onPrimaryContainer,
+          foregroundColor: kColorScheme.primaryContainer,
+        ),
+        cardTheme: CardThemeData(
+          color: kColorScheme.secondaryContainer,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kColorScheme.primaryContainer,
+            foregroundColor: kColorScheme.onPrimaryContainer,
           ),
-      darkTheme:
-          ThemeData.from(
-            colorScheme: kDarkColorScheme,
-            useMaterial3: true,
-          ).copyWith(
-            cardTheme: CardThemeData(
-              color: kDarkColorScheme.secondaryContainer,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            elevatedButtonTheme: ElevatedButtonThemeData(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kDarkColorScheme.primaryContainer,
-                foregroundColor: kDarkColorScheme.onPrimaryContainer,
-              ),
-            ),
+        ),
+        textTheme: ThemeData.from(colorScheme: kColorScheme).textTheme.copyWith(
+          titleLarge: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: kColorScheme.onSecondaryContainer,
+            fontSize: 16,
           ),
+        ),
+      ),
+      darkTheme: ThemeData.from(colorScheme: kDarkColorScheme).copyWith(
+        cardTheme: CardThemeData(
+          color: kDarkColorScheme.secondaryContainer,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kDarkColorScheme.primaryContainer,
+            foregroundColor: kDarkColorScheme.onPrimaryContainer,
+          ),
+        ),
+      ),
       themeMode: ThemeMode.system,
       home: const Expenses(),
     );
