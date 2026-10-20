@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/models/expense.dart';
+import 'package:expense_tracker/screens/categories.dart';
 import 'package:expense_tracker/widgets/new_expense.dart';
 import 'package:expense_tracker/widgets/expenses_list/expenses_list.dart';
 import 'package:expense_tracker/widgets/chart/chart.dart';
@@ -71,6 +72,11 @@ class _ExpensesState extends State<Expenses> {
     );
   }
 
+  void _openCategoriesScreen() {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (ctx) => const CategoriesScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
@@ -87,8 +93,14 @@ class _ExpensesState extends State<Expenses> {
         title: const Text('Flutter ExpenseTracker'),
         actions: [
           IconButton(
+            onPressed: _openCategoriesScreen,
+            icon: const Icon(Icons.category),
+            tooltip: 'Categories',
+          ),
+          IconButton(
             onPressed: _openAddExpenseOverlay,
             icon: const Icon(Icons.add),
+            tooltip: 'Add expense',
           ),
         ],
       ),
