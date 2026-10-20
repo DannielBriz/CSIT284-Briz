@@ -1,39 +1,39 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  
   runApp(
     MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Container(
-          decoration: BoxDecoration(
+          width: double.infinity,
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.deepPurple],
+              colors: [Colors.deepPurple, Color.fromARGB(255, 80, 20, 140)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.only(top: 200),
+          child: SafeArea(
+            child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset('assets/logo-image/logo.png', width: 200),
-                  Text(
+                  const SizedBox(height: 24),
+                  const Text(
                     'Learn Flutter the fun way!',
                     style: TextStyle(color: Colors.white, fontSize: 20),
                   ),
-
-                  SizedBox(height: 20),
-
+                  const SizedBox(height: 20),
                   TextButton(
                     onPressed: () {},
-                    child: Text(
+                    child: const Text(
                       'Start Quiz',
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
                 ],
-  
               ),
             ),
           ),
@@ -41,12 +41,4 @@ void main() {
       ),
     ),
   );
-}
-
-
-
-
-
-SafeArea Question{
-  printf("Try ")
 }
