@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shopping_list/data/categories.dart';
 
 import 'package:shopping_list/models/grocery_item.dart';
 import 'package:shopping_list/widgets/new_item.dart';
@@ -13,6 +15,36 @@ class GroceryList extends StatefulWidget {
 
 class _GroceryListState extends State<GroceryList> {
 List<GroceryItem> _groceryItems = [];
+@override
+  void initState(){
+    super.initState();
+    _loadItems();
+  }
+  void _loadItems() async{
+          final url = Uri.https(
+        'flutter-apps-a365b-default-rtdb.asia-southeast1.firebasedatabase.app',
+        'shopping-list.json'
+      );
+
+      final response = await http.get(url);
+      final Map<String, dynamic> listData = json.decode(response.body);
+      final List<GroceryItem> loadedItems = [];
+      for(final item in listData.entries){
+        final category = categories.entries.firstWhere(
+          (catItem) => catItem.value.title == item.value['category']
+        ).value;
+        loadedItems.add(
+          GroceryItem(
+            id:item.key,
+            name: item.value['name'],
+            quantity: item.value['quantity'],
+            category: category)
+
+
+            );
+            setState((){_groceryItems = loadedItems;});
+      }
+  }
 
   void _addItem() async {
     final newItem = await Navigator.of(context).push(
@@ -31,7 +63,9 @@ List<GroceryItem> _groceryItems = [];
   Widget build(BuildContext context) {
     Widget content = ListView.builder(
       itemCount: _groceryItems.length,
-      itemBuilder: (ctx, index) => ListTile(
+      itemBuilder: (ctx, index) => Dismissible(
+        key: ValueKey(_groceryItems[index]. id),
+        child: ListTile(
         title: Text(_groceryItems[index].name),
         leading: Container(
           width: 24,
@@ -40,8 +74,8 @@ List<GroceryItem> _groceryItems = [];
         ),
         trailing: Text(_groceryItems[index].quantity.toString()),
        ),
-      );
-
+      ),
+    );
       if(_groceryItems.isEmpty){
         content = const Center(child: Text('No items added yet'));
       }
