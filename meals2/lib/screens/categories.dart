@@ -9,18 +9,34 @@ import 'package:meals2/models/category.dart';
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({
     super.key,
-    required this.onToggleFavorite,
     required this.availableMeals,
   });
 
-  final void Function(Meal meal) onToggleFavorite;
   final List<Meal> availableMeals;
 
   @override
   State<CategoriesScreen> createState() => _CategoriesScreenState();
 }
 
-class _CategoriesScreenState extends State<CategoriesScreen> {
+class _CategoriesScreenState extends State<CategoriesScreen>
+ with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 300),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   void _selectCategory(BuildContext context, Category category) {
     final filteredMeals = widget.availableMeals
         .where((meal) => meal.categories.contains(category.id))
@@ -31,7 +47,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         builder: (ctx) => MealsScreen(
           title: category.title,
           meals: filteredMeals,
-
         ),
       ),
     ); // Navigator.push(context, route)
@@ -39,7 +54,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GridView(
+    return AnimatedBuilder(
+      animation: _animationController, 
+     child: GridView(
       padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -57,6 +74,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             },
           )
       ],
+    ),
+    builder: (context, child) => SlideTransition(
+      position: Tween(
+        begin: const Offset(0, 0.3),
+        end: const Offset(0, 0),
+      ).animate(CurvedAnimation(parent: _animationController, curve: Curves.decelerate)),
+      child: child,
+     ),
     );
   }
 }
